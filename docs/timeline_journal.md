@@ -35,3 +35,4 @@ Commit 39: Format report according to template requirements by ivanbrillo
 Commit 40: Final project documentation and cleanup by lucabiundo
  
 Commit 13: Refine model architecture in deepcfd_models.py
+Commit 14: Update training hyperparameters in DeepCFD_Training_IVAN.ipynb
