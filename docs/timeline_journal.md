@@ -34,3 +34,4 @@ Commit 38: Finalize training pipelines for all models by andimatteo
 Commit 39: Format report according to template requirements by ivanbrillo
 Commit 40: Final project documentation and cleanup by lucabiundo
  
+Commit 13: Refine model architecture in deepcfd_models.py
