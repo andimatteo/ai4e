@@ -37,3 +37,4 @@ Commit 40: Final project documentation and cleanup by lucabiundo
 Commit 13: Refine model architecture in deepcfd_models.py
 Commit 14: Update training hyperparameters in DeepCFD_Training_IVAN.ipynb
 Commit 15: Implement initial PINN loss function for comparison
+Commit 16: Fix data loading script for large pkl files
