@@ -8,3 +8,4 @@ Commit 13: Refine model architecture in deepcfd_models.py by lmagnolfi
 Commit 14: Update training hyperparameters in DeepCFD_Training_IVAN.ipynb by andimatteo
 Commit 15: Implement initial PINN loss function for comparison by ivanbrillo
 Commit 16: Fix data loading script for large pkl files by lucabiundo
+Commit 17: Integrate physics-informed constraints in training loop by lmagnolfi
