@@ -41,3 +41,4 @@ Commit 16: Fix data loading script for large pkl files
 Commit 17: Integrate physics-informed constraints in training loop
 Commit 18: Document preliminary results in timeline journal
 Commit 19: Optimize training performance in DeepCFD_Training_LEO.ipynb
+Commit 20: Update related work with DeepCFD paper analysis
