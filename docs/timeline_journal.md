@@ -13,3 +13,4 @@ Commit 18: Document preliminary results in timeline journal by andimatteo
  
 Commit 19: Optimize training performance in DeepCFD_Training_LEO.ipynb by ivanbrillo
 Commit 20: Update related work with DeepCFD paper analysis by lucabiundo
+Commit 21: Generate initial performance plots for report by lmagnolfi
