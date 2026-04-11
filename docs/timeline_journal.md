@@ -44,3 +44,4 @@ Commit 19: Optimize training performance in DeepCFD_Training_LEO.ipynb
 Commit 20: Update related work with DeepCFD paper analysis
 Commit 21: Generate initial performance plots for report
 Commit 22: Add biblio entries for physics-informed neural networks
+Commit 23: Refactor retrain_all_models.py for better logging
