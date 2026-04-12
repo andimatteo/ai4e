@@ -47,3 +47,4 @@ Commit 22: Add biblio entries for physics-informed neural networks
 Commit 23: Refactor retrain_all_models.py for better logging
 Commit 24: Run baseline comparison between DeepCFD and PINN
 Commit 25: Save intermediate model checkpoints
+Commit 26: Analyze training history and pkl dumps
