@@ -48,3 +48,4 @@ Commit 23: Refactor retrain_all_models.py for better logging
 Commit 24: Run baseline comparison between DeepCFD and PINN
 Commit 25: Save intermediate model checkpoints
 Commit 26: Analyze training history and pkl dumps
+Commit 27: Adjust LaTeX report structure for methodology section
