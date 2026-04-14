@@ -21,3 +21,4 @@ Commit 25: Save intermediate model checkpoints by lmagnolfi
 Commit 26: Analyze training history and pkl dumps by andimatteo
 Commit 27: Adjust LaTeX report structure for methodology section by ivanbrillo
 Commit 28: Validate model performance on test set by lucabiundo
+Commit 29: Update figures with new simulation results by lmagnolfi
