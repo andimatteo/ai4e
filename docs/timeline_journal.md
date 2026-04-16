@@ -55,3 +55,4 @@ Commit 30: Fix environment dependencies in env.yaml
 Commit 31: Fine-tune PINN weights based on residuals
 Commit 32: Clean up data preprocessing notebooks
 Commit 33: Extend report bibliography and citations
+Commit 34: Automate report generation script improvements
