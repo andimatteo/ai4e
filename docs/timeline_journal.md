@@ -28,3 +28,4 @@ Commit 32: Clean up data preprocessing notebooks by lucabiundo
 Commit 33: Extend report bibliography and citations by lmagnolfi
 Commit 34: Automate report generation script improvements by andimatteo
 Commit 35: Compare model variants and export metrics by ivanbrillo
+Commit 36: Implement cross-validation logic in training scripts by lucabiundo
