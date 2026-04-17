@@ -56,3 +56,4 @@ Commit 31: Fine-tune PINN weights based on residuals
 Commit 32: Clean up data preprocessing notebooks
 Commit 33: Extend report bibliography and citations
 Commit 34: Automate report generation script improvements
+Commit 35: Compare model variants and export metrics
