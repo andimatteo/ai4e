@@ -218,8 +218,7 @@ UNet-Transformer (+phys) & 6.8762e-03 & 106,205 \\
 \end{tabular}
 \end{table}
 
-\section{Confronto visuale (solo figure presenti)}
-Le figure seguenti sono tutte presenti nella cartella locale del report e mostrano il confronto qualitativo in inferenza.
+\section{Confronto visuale}
 
 \begin{figure}[h]
     \centering
@@ -271,9 +270,9 @@ Le figure seguenti sono tutte presenti nella cartella locale del report e mostra
 \end{figure}
 
 \section{Discussione}
-Nel budget corrente, la componente fisica aiuta in modo chiaro il modello Attention, mentre non porta vantaggi su FNO e Transformer. Questo non implica che FNO e Transformer siano inadatti al problema: indica piuttosto che richiedono una strategia di training piu' lunga o piu' specifica (schedule, pesi PINN, tuning della stabilizzazione).
+Per il training corrente, la componente di loss fisica aiuta in modo chiaro il modello Attention, mentre non porta vantaggi su FNO e Transformer. Questo non implica che FNO e Transformer siano inadatti al problema: indica piuttosto che richiedono una strategia di training diversa (numero di epoche maggiore, scheduling diverso).
 
-Le analisi visuali confermano il risultato numerico: UNet-Attention (+phys) mostra un compromesso migliore tra ricostruzione della wake, regolarita' del campo e distribuzione dell'errore su pressione e velocita'.
+Le analisi visuali confermano il risultato numerico: UNet-Attention (+phys) mostra un compromesso migliore nella ricostruzione, regolarita' del campo e distribuzione dell'errore su pressione e velocita'.
 
 \section{Conclusioni}
 Il confronto svolto in questo coursework mostra che:
@@ -283,8 +282,6 @@ Il confronto svolto in questo coursework mostra che:
     \item nel setup corrente il miglior modello e' UNet-Attention (+phys),
     \item la valutazione deve includere sia metriche aggregate sia confronto visuale.
 \end{enumerate}
-
-Come passi successivi, e' consigliabile estendere il training delle varianti globali (FNO/Transformer) e fare tuning sistematico dei coefficienti $\lambda_c$, $\lambda_m$ e $\lambda_b$.
 
 \end{document}
 
