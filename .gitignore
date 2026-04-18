@@ -6,3 +6,5 @@
 .svg
 artifacts/
 dataset/
+__pycache__
+*.svg
