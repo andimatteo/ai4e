@@ -15,3 +15,7 @@ related-work/
 *.pkl
 *.pt
 checkpoints/
+*.aux
+*.log
+*.pdf
+*.spl
