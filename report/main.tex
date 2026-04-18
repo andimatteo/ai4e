@@ -1,122 +1,208 @@
-%% 
-%% Copyright 2007-2026 Elsevier Ltd
-%% 
-%% This file is part of the 'Elsarticle Bundle'.
-%% ---------------------------------------------
-%% 
-%% It may be distributed under the conditions of the LaTeX Project Public
-%% License, either version 1.3 of this license or (at your option) any
-%% later version.  The latest version of this license is in
-%%    http://www.latex-project.org/lppl.txt
-%% and version 1.3 or later is part of all distributions of LaTeX
-%% version 1999/12/01 or later.
-%% 
-%% The list of all files belonging to the 'Elsarticle Bundle' is
-%% given in the file `manifest.txt'.
-%% 
-%% Template article for Elsevier's document class `elsarticle'
-%% with numbered style bibliographic references
-%% SP 2008/03/01
-%% $Id: elsarticle-template-num.tex 289 2026-01-09 06:13:01Z rishi $
-%%
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[final,3p,times,twocolumn]{elsarticle}
 
-%% Use the option review to obtain double line spacing
-%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
-
-%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
-%% for a journal layout:
-%% \documentclass[final,1p,times]{elsarticle}
-%% \documentclass[final,1p,times,twocolumn]{elsarticle}
-%% \documentclass[final,3p,times]{elsarticle}
-%% \documentclass[final,3p,times,twocolumn]{elsarticle}
-%% \documentclass[final,5p,times]{elsarticle}
-%% \documentclass[final,5p,times,twocolumn]{elsarticle}
-
-%% For including figures, graphicx.sty has been loaded in
-%% elsarticle.cls. If you prefer to use the old commands
-%% please give \usepackage{epsfig}
-
-%% The amssymb package provides various useful mathematical symbols
-\usepackage{amssymb}
-%% The amsmath package provides various useful equation environments.
 \usepackage{amsmath}
-%% The amsthm package provides extended theorem environments
-%% \usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{url}
 
-%% The lineno packages adds line numbers. Start line numbering with
-%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
-%% for the whole article with \linenumbers.
-%% \usepackage{lineno}
-
-\journal{Nuclear Physics B}
+\journal{AI4E Coursework: Artificial Intelligence for Energy Engineering}
 
 \begin{document}
 
 \begin{frontmatter}
 
+\title{Physics-Informed DeepCFD Surrogates for 2D Internal Flow: \newline
+Comparative Study of U-Net Attention, FNO, and Transformer Bottlenecks}
 
-\title{}
+\author{Ivan Brillo}
+\author{Luca BIundo}
+\author{Andrea Di Matteo}
+\author{Leonardo Magnolfi}
 
-%% use optional labels to link authors explicitly to addresses:
-%% \author[label1,label2]{}
-%% \affiliation[label1]{organization={},
-%%             addressline={},
-%%             city={},
-%%             postcode={},
-%%             state={},
-%%             country={}}
-%%
-%% \affiliation[label2]{organization={},
-%%             addressline={},
-%%             city={},
-%%             postcode={},
-%%             state={},
-%%             country={}}
+\affiliation{organization={AI4E Coursework Team, Artificial Intelligence for Energy Engineering},
+             city={Italy},
+             country={Italy}}
 
-\author{} %% Author name
-
-%% Author affiliation
-\affiliation{organization={},%Department and Organization
-            addressline={}, 
-            city={},
-            postcode={}, 
-            state={},
-            country={}}
-
-%% Abstract
 \begin{abstract}
-%% Text of abstract
-Abstract text.
+This report presents an end-to-end comparison of DeepCFD-style surrogate models for steady 2D flow prediction in obstacle-containing channels. Starting from the DeepCFD baseline, we evaluate three upgraded architectures sharing the same encoder-decoder backbone: U-Net with attention gates, U-Net with Fourier Neural Operator (FNO) bottleneck, and U-Net with Transformer bottleneck. Each architecture is trained in two regimes: data-only and data-plus-physics through a Physics-Informed Neural Network (PINN)-inspired residual loss. 
+
+Results show that the attention architecture with physics constraints currently provides the best quantitative trade-off, improving masked test MSE by +8.25\% versus its data-only counterpart. In contrast, FNO and Transformer variants degrade in the same training budget, suggesting that stronger global-mixing models may need longer schedules and/or better physics-weight calibration to exploit PINN constraints effectively. We further discuss physical consistency through residual maps, boundary-aware masking, and pressure-gauge handling, and conclude with practical recommendations for training stability and scientific reliability.
 \end{abstract}
 
-%%Graphical abstract
-\begin{graphicalabstract}
-%\includegraphics{grabs}
-\end{graphicalabstract}
-
-%%Research highlights
-\begin{highlights}
-\item Research highlight 1
-\item Research highlight 2
-\end{highlights}
-
-%% Keywords
 \begin{keyword}
-%% keywords here, in the form: keyword \sep keyword
-
+DeepCFD \sep PINN \sep Graph/Mesh-inspired learning \sep Attention U-Net \sep FNO \sep Transformer \sep CFD surrogate modeling
 \end{keyword}
 
 \end{frontmatter}
 
-\section{Example Section}\label{sec1}
+\section{Introduction}
+High-fidelity Computational Fluid Dynamics (CFD) remains a cornerstone in energy engineering, but it is computationally expensive when repeated evaluations are required for design-space exploration, optimization, or control. DeepCFD proposed a supervised surrogate approach where convolutional neural networks map geometric/boundary-condition encodings to full flow fields \cite{ribeiro2020deepcfd}. 
 
-\bibliographystyle{elsarticle-num} 
+In this coursework, we reproduce the DeepCFD setting and investigate whether modern non-local inductive biases improve performance and physical consistency:
+\begin{itemize}
+    \item attention-gated skip connections \cite{oktay2018attentionunet},
+    \item Fourier global mixing via FNO bottleneck \cite{li2021fno},
+    \item self-attention via Transformer bottleneck \cite{vaswani2017attention}.
+\end{itemize}
+
+Each model is trained both data-only and with additional physics residual penalties (continuity, momentum, and boundary terms), yielding a controlled comparison on the effect of PINN-style regularization.
+
+\section{Related Work and Rationale}
+DeepCFD demonstrated that structured-grid surrogates can significantly accelerate flow prediction while retaining acceptable error levels \cite{ribeiro2020deepcfd}. MeshGraphNets extended message-passing simulation to unstructured domains, emphasizing relative geometric encoding and long-horizon stability \cite{pfaff2021meshgraphnets}. While our implementation remains grid-based, the same principle motivates the use of non-local operators (FNO and Transformer) to better capture long-range interactions.
+
+For physics-informed learning, practical evidence indicates that successful training often requires careful balancing, curriculum/ramping, and substantial optimization time \cite{chuang2022pinnpitfalls}. This is directly relevant to our findings: PINN terms can improve consistency, but they do not guarantee immediate metric gains under fixed epoch budgets.
+
+\section{Methodology}
+\subsection{Task and Data Representation}
+Input tensors encode geometry/boundary information on a fixed grid, and targets are three fields: velocity components $(U_x, U_y)$ and pressure $p$. Data are split 70/15/15 into train/validation/test. Evaluation metrics are computed on the fluid region only (obstacle masked out), consistent with physically meaningful error accounting.
+
+\subsection{Model Family}
+All models share a common U-Net-like encoder/decoder and differ in skip/bottleneck mechanisms:
+\begin{itemize}
+    \item \textbf{UNet-Base}: plain convolutional bottleneck,
+    \item \textbf{UNet-Attention}: skip attention gates,
+    \item \textbf{UNet-FNO}: spectral FNO bottleneck,
+    \item \textbf{UNet-Transformer}: MHSA bottleneck with positional embedding.
+\end{itemize}
+
+Architectural diagrams are shown in Fig.~\ref{fig:arch}.
+
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/unet_attention_architecture.pdf}
+        \caption{UNet-Attention}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/unet_fno_architecture.pdf}
+        \caption{UNet-FNO}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/unet_transformer_architecture.pdf}
+        \caption{UNet-Transformer}
+    \end{subfigure}
+    \caption{Architectures evaluated in this study. All models share the same macro-backbone and output head; only skip/bottleneck mechanisms change.}
+    \label{fig:arch}
+\end{figure*}
+
+\subsection{Loss Design}
+The data term follows the DeepCFD weighted formulation:
+\begin{equation}
+\mathcal{L}_{data} = \frac{1}{3}\left(\frac{\mathrm{MSE}(U_x)}{w_{Ux}} + \frac{\mathrm{MSE}(U_y)}{w_{Uy}} + \frac{\mathrm{MAE}(p)}{w_p}\right),
+\end{equation}
+with channel-wise RMS normalization weights $w_c$.
+
+The physics-informed term combines continuity, momentum, and boundary penalties via finite-difference residuals:
+\begin{equation}
+\mathcal{L}_{phys}=\lambda_c\mathcal{L}_{cont}+\lambda_m\mathcal{L}_{mom}+\lambda_b\mathcal{L}_{bc}.
+\end{equation}
+
+The final objective is
+\begin{equation}
+\mathcal{L}=\mathcal{L}_{data}+\lambda_{eff}(e)\,\mathcal{L}_{phys},
+\end{equation}
+where $\lambda_{eff}$ includes epoch ramping and adaptive gradient-norm balancing.
+
+\section{Experimental Results}
+\subsection{Quantitative Comparison}
+Table~\ref{tab:main} summarizes masked test metrics from the generated evaluation CSVs.
+
+\begin{table}[h]
+\centering
+\caption{Masked test performance (fluid-only). Lower is better.}
+\label{tab:main}
+\begin{tabular}{lcc}
+\toprule
+Model & MSE$_{total}$ & SSE$_{total}$ \\
+\midrule
+UNet-Base (data) & 1.0012e-4 & 3.9596 \\
+UNet-Attention (data) & 1.0506e-4 & 4.1578 \\
+UNet-FNO (data) & 1.2947e-4 & 5.1127 \\
+UNet-Transformer (data) & 1.0226e-4 & 4.0446 \\
+UNet-Attention (+phys) & \textbf{9.6396e-5} & \textbf{3.8139} \\
+UNet-FNO (+phys) & 1.5376e-4 & 6.0683 \\
+UNet-Transformer (+phys) & 1.0863e-4 & 4.2937 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+From data-only to +physics:
+\begin{itemize}
+    \item Attention improves by \textbf{+8.25\%} MSE,
+    \item FNO degrades by \textbf{-18.76\%},
+    \item Transformer degrades by \textbf{-6.24\%}.
+\end{itemize}
+
+This divergence across architectures is central: physics terms are beneficial only when optimization dynamics and representational bias are aligned under the chosen training budget.
+
+\subsection{Convergence and Error Distributions}
+Figure~\ref{fig:curves} compares data-only vs +physics convergence. The attention model shows the clearest stable gain with PINN regularization, while FNO/Transformer display less favorable trajectories in the same epoch window.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{../figures/fig_data_vs_physics_curves.pdf}
+    \caption{Validation convergence for data-only vs data+physics per architecture.}
+    \label{fig:curves}
+\end{figure}
+
+Relative-error histograms (Fig.~\ref{fig:relerr}) confirm that pressure remains the dominant contributor to total error spread, while $U_y$ is generally easier to fit than $U_x$ in this setup.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{../figures/fig_relative_errors.pdf}
+    \caption{Relative error distributions across channels and models.}
+    \label{fig:relerr}
+\end{figure}
+
+\subsection{Inference Cost}
+Across batch sizes, all surrogates are several orders of magnitude faster than the CFD reference baseline used in the DeepCFD convention. Depending on architecture and batching, speedups are in the range of approximately $7\times10^3$ to $1.3\times10^5$.
+
+\section{Discussion}
+\subsection{Why PINN Helps Some Models More Than Others}
+Our results suggest that the PINN extension is not universally plug-and-play:
+\begin{itemize}
+    \item Attention-gated skips preserve locality while selectively emphasizing flow-relevant structures, giving a favorable optimization landscape for residual penalties.
+    \item FNO/Transformer bottlenecks introduce stronger global coupling. Under limited epochs, this can make balancing $\mathcal{L}_{data}$ and $\mathcal{L}_{phys}$ harder, causing under-optimized compromises.
+\end{itemize}
+
+Therefore, it is plausible that PINN variants, especially on globally-mixing architectures, need \textbf{more epochs} (and potentially longer ramp-up and architecture-specific $\lambda_{phys}$ tuning) to realize their full benefit.
+
+\subsection{Physical Consistency}
+Physical consistency was analyzed qualitatively and semi-quantitatively through residual maps (continuity and momentum) and boundary-aware masking:
+\begin{itemize}
+    \item enforcing obstacle masking and pressure gauge correction improves numerical behavior and interpretability,
+    \item residual maps show that low pointwise data error does not automatically imply best PDE consistency,
+    \item the +physics regime tends to produce smoother and more physically plausible fields when optimization converges adequately.
+\end{itemize}
+
+Representative residual maps are shown in Fig.~\ref{fig:residuals}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{../figures/fig_residuals.pdf}
+    \caption{Continuity and momentum residual maps on a test sample.}
+    \label{fig:residuals}
+\end{figure}
+
+\section{Conclusions}
+This coursework confirms three key points:
+\begin{enumerate}
+    \item DeepCFD-style surrogates provide substantial inference acceleration for engineering workflows.
+    \item PINN losses can improve both accuracy and consistency, but gains are architecture-dependent.
+    \item In the current budget, \textbf{UNet-Attention + physics} is the best overall compromise between error and physical behavior.
+\end{enumerate}
+
+Future work should prioritize longer training schedules for PINN variants, architecture-specific physics-weight scheduling, and extension to mesh-native graph models for better geometric generalization.
+
+\bibliographystyle{elsarticle-num}
 \bibliography{biblio}
+
 \end{document}
 
-\endinput
-%%
-%% End of file `elsarticle-template-num.tex'.
- 
- 
+
