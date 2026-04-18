@@ -22,19 +22,19 @@
 \author{Leonardo Magnolfi}
 
 \affiliation{organization={AI4E Coursework Team, Artificial Intelligence for Energy Engineering},
-             city={Italy},
+             city={Scuola Superiore Sant'Anna},
              country={Italy}}
 
 \begin{abstract}
-Questo report presenta il confronto tra modelli surrogati DeepCFD per la previsione stazionaria di flussi 2D in canali con ostacolo. Sono state analizzate quattro famiglie di modelli (Base, Attention, FNO, Transformer), ciascuna valutata in regime solo dati e dati+fisica. La loss fisica segue una formulazione PINN con componenti di continuita', quantita' di moto e vincoli al bordo.
+Questo report presenta il confronto tra modelli surrogati DeepCFD per la previsione stazionaria di flussi 2D in canali con ostacolo. Sono state analizzate quattro famiglie di modelli (Base, Attention, FNO, Transformer), ciascuna addestrata utilizzando i soli dati e dati con loss fisiche rispettivamente. La loss fisica segue una formulazione PINN con componenti di continuita', quantita' di moto e vincoli al bordo.
 
-Nel budget di training usato in questo progetto, il modello con il miglior compromesso tra accuratezza e coerenza fisica e' UNet-Attention + physics, che migliora la MSE test masked di +8.25\% rispetto alla versione data-only. Il report include analisi quantitative, analisi per canale, confronto visuale in inferenza e discussione dei limiti osservati.
+Nel budget di training usato in questo progetto, il modello con il miglior compromesso tra accuratezza e coerenza fisica e' UNet-Attention + loss fisica, che migliora il Mean Square Error (MSE) dell'8.25\% rispetto alla versione data-only. Il report include analisi quantitative, analisi per canale, confronto visuale e discussione dei limiti osservati.
 \end{abstract}
 
 \end{frontmatter}
 
 \section{Introduzione}
-L'obiettivo del lavoro e' valutare quanto l'informazione fisica possa migliorare i surrogati neurali per CFD rispetto a una configurazione supervisionata classica. Il confronto e' stato impostato in modo controllato: stesso split dati, stessa pipeline di valutazione e stesso budget di training per tutte le architetture.
+L'obiettivo del lavoro e' valutare quanto l'informazione fisica possa migliorare i surrogati neurali per CFD rispetto ad un addestramento di ML classico. Il confronto e' stato impostato in modo controllato: stesso split dati, stessa pipeline di valutazione e stesso numero di epoche per tutte le architetture.
 
 Sono stati valutati due regimi:
 \begin{itemize}
@@ -48,7 +48,7 @@ Gli input rappresentano geometria e condizioni al contorno su griglia fissa; i t
 
 Le metriche sono calcolate solo nel dominio fluido (masking dell'ostacolo), cosi' da evitare errori non fisicamente significativi nella regione solida.
 
-\subsection{Architetture considerate (una alla volta)}
+\subsection{Architetture considerate}
 In tutti i casi la struttura generale e' encoder-decoder di tipo U-Net. Cambia il meccanismo interno di fusione e propagazione dell'informazione.
 
 \subsubsection*{1) UNet-Attention}
