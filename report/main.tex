@@ -7,6 +7,7 @@
 \usepackage{subcaption}
 \usepackage{siunitx}
 \usepackage{url}
+\usepackage{placeins}
 
 \journal{AI4E Coursework: Artificial Intelligence for Energy Engineering}
 
@@ -182,19 +183,28 @@ UNet-Transformer (+phys) & 7.0695e-05 & 7.7878e-06 & 2.4742e-04 \\
 \end{table}
 
 \subsection{Convergenza e distribuzioni}
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_data_vs_physics_curves.pdf}
-    \caption{Convergenza in validation: confronto data-only vs data+physics.}
-    \label{fig:curves}
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_data_vs_physics_curves.pdf}
+        \caption{Convergenza in validation: confronto data-only vs data+physics.}
+        \label{fig:curves}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_relative_errors.pdf}
+        \caption{Distribuzioni dell'errore relativo per canale e per modello.}
+        \label{fig:relerr}
+    \end{subfigure}
+    \caption{Sintesi dell'andamento di training e della distribuzione degli errori sul test set.}
+    \label{fig:training_error_summary}
 \end{figure}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_relative_errors.pdf}
-    \caption{Distribuzioni dell'errore relativo per canale e per modello.}
-    \label{fig:relerr}
-\end{figure}
+\FloatBarrier
 
 \subsection{Costo di inferenza}
 I surrogati risultano ordini di grandezza piu' veloci della baseline CFD di riferimento. La Tabella~\ref{tab:inference} riassume i tempi principali.
@@ -219,55 +229,76 @@ UNet-Transformer (+phys) & 6.8762e-03 & 106,205 \\
 \end{table}
 
 \section{Confronto visuale}
+Le figure sono organizzate in tre blocchi: confronto campioni, mappe d'errore per modello e mappe di residuo.
 
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_flow_compare_data_phys_sample_0.pdf}
-    \caption{Confronto data-only vs data+physics su campione 0.}
-    \label{fig:flow0}
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_0.pdf}
+        \caption{Confronto data-only vs data+physics su campione 0.}
+        \label{fig:flow0}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_10.pdf}
+        \caption{Confronto data-only vs data+physics su campione 10.}
+        \label{fig:flow10}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_25.pdf}
+        \caption{Confronto data-only vs data+physics su campione 25.}
+        \label{fig:flow25}
+    \end{subfigure}
+    \caption{Confronto visuale su campioni rappresentativi del test set.}
+    \label{fig:flow_comparison_block}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_flow_compare_data_phys_sample_10.pdf}
-    \caption{Confronto data-only vs data+physics su campione 10.}
-    \label{fig:flow10}
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_attn_phys_sample0.pdf}
+        \caption{Mappe errore (modulo velocita' e pressione): UNet-Attention (+phys).}
+        \label{fig:err_attn}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_fno_phys_sample10.pdf}
+        \caption{Mappe errore (modulo velocita' e pressione): UNet-FNO (+phys).}
+        \label{fig:err_fno}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{0.98\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_trans_phys_sample25.pdf}
+        \caption{Mappe errore (modulo velocita' e pressione): UNet-Transformer (+phys).}
+        \label{fig:err_trans}
+    \end{subfigure}
+    \caption{Confronto delle mappe d'errore per i tre modelli physics-informed.}
+    \label{fig:error_maps_block}
 \end{figure}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_flow_compare_data_phys_sample_25.pdf}
-    \caption{Confronto data-only vs data+physics su campione 25.}
-    \label{fig:flow25}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_umag_p_error_attn_phys_sample0.pdf}
-    \caption{Mappe errore (modulo velocita' e pressione): UNet-Attention (+phys).}
-    \label{fig:err_attn}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_umag_p_error_fno_phys_sample10.pdf}
-    \caption{Mappe errore (modulo velocita' e pressione): UNet-FNO (+phys).}
-    \label{fig:err_fno}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.95\linewidth]{figures/fig_umag_p_error_trans_phys_sample25.pdf}
-    \caption{Mappe errore (modulo velocita' e pressione): UNet-Transformer (+phys).}
-    \label{fig:err_trans}
-\end{figure}
-
-\begin{figure}[h]
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.95\linewidth]{figures/fig_residuals.pdf}
     \caption{Mappe di residuo di continuita' e quantita' di moto su test set.}
     \label{fig:residuals}
 \end{figure}
+
+\FloatBarrier
 
 \section{Discussione}
 Per il training corrente, la componente di loss fisica aiuta in modo chiaro il modello Attention, mentre non porta vantaggi su FNO e Transformer. Questo non implica che FNO e Transformer siano inadatti al problema: indica piuttosto che richiedono una strategia di training diversa (numero di epoche maggiore, scheduling diverso).
