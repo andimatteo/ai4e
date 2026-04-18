@@ -10,3 +10,6 @@ __pycache__
 *.svg
 figures/
 related-work/
+*.pkl
+*.pt
+checkpoints/
