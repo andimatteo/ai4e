@@ -58,3 +58,4 @@ Commit 33: Extend report bibliography and citations
 Commit 34: Automate report generation script improvements
 Commit 35: Compare model variants and export metrics
 Commit 36: Implement cross-validation logic in training scripts
+Commit 37: Debug convergence issues in physics-informed model
