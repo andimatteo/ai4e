@@ -8,7 +8,9 @@ artifacts/
 dataset/
 __pycache__
 *.svg
-figures/
+/figures/
+!/report/figures/
+!/report/figures/**
 related-work/
 *.pkl
 *.pt
