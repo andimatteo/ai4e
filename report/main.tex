@@ -49,7 +49,7 @@ Il coursework confronta una baseline U-Net con tre varianti che introducono bias
 
 Ogni modello e' stato addestrato sia in regime data-only sia in regime data+physics con penalizzazione PINN dei residui di continuita', quantita' di moto e bordo. Questo permette un confronto controllato dell'effetto della regolarizzazione fisica.
 
-\section{Obiettivi del Report}
+\section{Scopo del Lavoro}
 Gli obiettivi principali sono quattro:
 \begin{itemize}
     \item confrontare quantitativamente le architetture sul test set masked,
@@ -59,12 +59,12 @@ Gli obiettivi principali sono quattro:
 \end{itemize}
 
 \section{Metodologia}
-\subsection{Task e rappresentazione dei dati}
+\subsection{Impostazione del problema e dati}
 Gli input codificano geometria e condizioni al contorno su griglia fissa; i target sono i tre canali fluidodinamici $(U_x, U_y, p)$. Lo split e' 70/15/15 tra train/validation/test. Le metriche sono calcolate solo nella regione fluida (ostacolo escluso tramite masking), per garantire un confronto fisicamente coerente.
 
 La scelta del masking e' cruciale: includere celle solide introdurrebbe errori non fisici e distorcerebbe il ranking tra modelli. Tutte le metriche aggregate riportate sono quindi riferite a celle fluide valide.
 
-\subsection{Famiglia di modelli}
+\subsection{Architetture considerate}
 Tutti i modelli condividono backbone encoder-decoder di tipo U-Net e differiscono nel meccanismo di skip/bottleneck:
 \begin{itemize}
     \item \textbf{UNet-Base}: bottleneck convoluzionale standard,
@@ -89,7 +89,7 @@ Il bottleneck Transformer usa self-attention multi-head con encoding posizionale
 
 \begin{table}[h]
 \centering
-\caption{Model complexity and practical role in this coursework.}
+\caption{Complessita' dei modelli e ruolo pratico nel coursework.}
 \label{tab:arch_details}
 \begin{tabular}{lcl}
 \toprule
@@ -103,7 +103,7 @@ UNet-Transformer & 884,931 & Attenzione globale adattiva \\
 \end{tabular}
 \end{table}
 
-\subsection{Protocollo di training e valutazione}
+\subsection{Protocollo sperimentale}
 Per garantire equita' nel confronto, tutte le architetture sono addestrate con stesso split, stessi canali di output e stessa pipeline di metrica. Ogni modello e' valutato in due regimi:
 \begin{itemize}
     \item \textbf{data-only}: loss supervisionata su $(U_x,U_y,p)$,
@@ -178,13 +178,13 @@ Tre scelte implementative sono state particolarmente importanti per la stabilita
     \item il peso fisico viene attivato in modo progressivo per evitare dominanza precoce sulla parte dati.
 \end{itemize}
 
-\section{Risultati Sperimentali}
-\subsection{Confronto quantitativo principale}
+\section{Risultati}
+\subsection{Confronto quantitativo}
 La Tabella~\ref{tab:main} riassume le metriche di test masked.
 
 \begin{table}[h]
 \centering
-\caption{Masked test performance (fluid-only). Lower is better.}
+\caption{Prestazioni sul test masked (solo dominio fluido). Valori piu' bassi sono migliori.}
 \label{tab:main}
 \begin{tabular}{lcc}
 \toprule
@@ -220,7 +220,7 @@ Per capire da dove nasce il miglioramento, la Tabella~\ref{tab:channels} riporta
 
 \begin{table}[h]
 \centering
-\caption{Masked test MSE per channel (fluid-only).}
+\caption{MSE di test masked per canale (solo dominio fluido).}
 \label{tab:channels}
 \begin{tabular}{lccc}
 \toprule
@@ -237,7 +237,7 @@ UNet-Transformer (+phys) & 7.0695e-05 & 7.7878e-06 & 2.4742e-04 \\
 \end{tabular}
 \end{table}
 
-\subsection{Convergenza e distribuzione degli errori}
+\subsection{Andamento della convergenza ed errori}
 La Figura~\ref{fig:curves} confronta la convergenza validation tra data-only e data+physics. Il modello attention mostra il guadagno piu' stabile con regolarizzazione PINN, mentre FNO e Transformer presentano traiettorie meno favorevoli nello stesso orizzonte di epoche.
 
 \begin{figure}[h]
@@ -263,7 +263,7 @@ La Tabella~\ref{tab:inference} riporta latenze e speedup rappresentativi. Come a
 
 \begin{table}[h]
 \centering
-\caption{Inference timing summary from benchmark CSV.}
+\caption{Sintesi dei tempi di inferenza dal benchmark.}
 \label{tab:inference}
 \begin{tabular}{lcc}
 \toprule
@@ -325,8 +325,8 @@ Queste diagnostiche sono importanti perche' due modelli con MSE globale simile p
     \label{fig:error_maps}
 \end{figure*}
 
-\section{Discussione}
-\subsection{Perche' la PINN aiuta alcuni modelli e non altri}
+\section{Discussione dei risultati}
+\subsection{Effetto della loss PINN sulle diverse architetture}
 I risultati mostrano che l'estensione PINN non e' automaticamente vantaggiosa per tutte le architetture:
 \begin{itemize}
     \item gli skip con attention preservano localita' e selettivita', creando un landscape di ottimizzazione piu' favorevole ai termini di residuo,
@@ -337,7 +337,7 @@ In termini architetturali, il modello migliore nel benchmark (UNet-Attention + p
 
 E' quindi plausibile che le varianti PINN, soprattutto con mixing globale, richiedano \textbf{piu' epoche} e tuning specifico dei coefficienti fisici per esprimere appieno il proprio potenziale.
 
-\subsection{Consistenza fisica}
+\subsection{Consistenza fisica dei campi predetti}
 La consistenza fisica e' stata analizzata in modo qualitativo e semi-quantitativo tramite mappe di residuo (continuita' e quantita' di moto) e masking consapevole dei bordi:
 \begin{itemize}
     \item masking dell'ostacolo e gauge correction della pressione migliorano stabilita' numerica e interpretabilita',
@@ -354,8 +354,8 @@ Mappe di residuo rappresentative sono riportate in Fig.~\ref{fig:residuals}.
     \label{fig:residuals}
 \end{figure}
 
-\section{Conclusioni}
-Il report evidenzia quattro punti principali:
+\section{Sintesi finale}
+Dall'analisi emerge in modo chiaro quanto segue:
 \begin{enumerate}
     \item i surrogati DeepCFD forniscono forte accelerazione in inferenza per workflow ingegneristici,
     \item la loss PINN puo' migliorare accuratezza e consistenza, ma il beneficio dipende dall'architettura e dalla dinamica di ottimizzazione,
@@ -363,7 +363,7 @@ Il report evidenzia quattro punti principali:
     \item analisi per canale e confronto visuale sono complementi necessari alla sola MSE aggregata.
 \end{enumerate}
 
-Sviluppi futuri consigliati: (i) schedule PINN piu' lunghe e specifiche per modello, (ii) tuning sistematico di $\lambda_c,\lambda_m,\lambda_b$, (iii) diagnostiche di incertezza nelle regioni di flusso piu' difficili, (iv) estensione verso modelli graph/mesh-native per migliore generalizzazione geometrica.
+Come sviluppi successivi, e' consigliabile: (i) estendere la durata del training PINN con schedule specifiche per architettura, (ii) ottimizzare in modo sistematico i pesi $\lambda_c,\lambda_m,\lambda_b$, (iii) introdurre diagnostiche di incertezza nelle zone di flusso piu' critiche, (iv) valutare modelli graph/mesh-native per migliorare la generalizzazione geometrica.
 
 \end{document}
 
