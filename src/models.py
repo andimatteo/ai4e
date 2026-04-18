@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import inspect
 
 
 class ConvBlock(nn.Module):
@@ -522,11 +523,18 @@ def count_params(model):
 def build_model(model_type, **kwargs):
     key = model_type.lower()
     if key == "base":
-        return UNetBase(**kwargs)
-    if key in ["attn", "attention"]:
-        return UNetAttention(**kwargs)
-    if key == "fno":
-        return UNetFNO(**kwargs)
-    if key in ["trans", "transformer"]:
-        return UNetTransformer(**kwargs)
-    raise ValueError(f"Unknown model type: {model_type}")
+        model_cls = UNetBase
+    elif key in ["attn", "attention"]:
+        model_cls = UNetAttention
+    elif key == "fno":
+        model_cls = UNetFNO
+    elif key in ["trans", "transformer"]:
+        model_cls = UNetTransformer
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
+    # Allow shared experiment configs while dropping args unsupported by a specific model.
+    sig = inspect.signature(model_cls.__init__)
+    supported = {name for name in sig.parameters.keys() if name != "self"}
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in supported}
+    return model_cls(**filtered_kwargs)
