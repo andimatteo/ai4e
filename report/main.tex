@@ -15,8 +15,8 @@
 
 \begin{frontmatter}
 
-\title{Physics-Informed DeepCFD Surrogates for 2D Internal Flow: \newline
-Comparative Study of U-Net Attention, FNO, and Transformer Bottlenecks}
+\title{Coursework: Surrogati DeepCFD Physics-Informed per Flusso Interno 2D \newline
+Confronto tra U-Net Attention, FNO e Transformer}
 
 \author{Ivan Brillo}
 \author{Luca BIundo}
@@ -28,48 +28,89 @@ Comparative Study of U-Net Attention, FNO, and Transformer Bottlenecks}
              country={Italy}}
 
 \begin{abstract}
-This report presents an end-to-end comparison of DeepCFD-style surrogate models for steady 2D flow prediction in obstacle-containing channels. Starting from the DeepCFD baseline, we evaluate three upgraded architectures sharing the same encoder-decoder backbone: U-Net with attention gates, U-Net with Fourier Neural Operator (FNO) bottleneck, and U-Net with Transformer bottleneck. Each architecture is trained in two regimes: data-only and data-plus-physics through a Physics-Informed Neural Network (PINN)-inspired residual loss. 
+Questo report presenta un confronto completo tra modelli surrogati in stile DeepCFD per la previsione stazionaria di flussi 2D in canali con ostacolo. A partire da una baseline U-Net, sono state valutate tre varianti con stesso schema encoder-decoder: U-Net con attention gates, U-Net con bottleneck Fourier Neural Operator (FNO) e U-Net con bottleneck Transformer. Ogni architettura e' stata addestrata in due regimi: solo dati e dati + fisica, tramite una loss PINN basata su residui di continuita', quantita' di moto e vincoli al bordo.
 
-Results show that the attention architecture with physics constraints currently provides the best quantitative trade-off, improving masked test MSE by +8.25\% versus its data-only counterpart. In contrast, FNO and Transformer variants degrade in the same training budget, suggesting that stronger global-mixing models may need longer schedules and/or better physics-weight calibration to exploit PINN constraints effectively. We further discuss physical consistency through residual maps, boundary-aware masking, and pressure-gauge handling, and conclude with practical recommendations for training stability and scientific reliability.
+I risultati quantitativi mostrano che la configurazione migliore nel budget corrente e' UNet-Attention + physics, con miglioramento di MSE test masked pari a +8.25\% rispetto alla sua controparte data-only. Le varianti FNO e Transformer, nello stesso budget di training, non migliorano con la loss fisica: cio' indica che modelli con mixing globale piu' forte richiedono verosimilmente scheduling piu' lungo e taratura piu' accurata dei pesi fisici.
+
+Oltre alle metriche aggregate, il report include analisi per canale, confronto visuale in inferenza, mappe di errore e mappe di residuo PDE, per evidenziare dove ogni architettura riesce o fallisce (wake, gradiente di pressione, regioni vicine all'ostacolo).
 \end{abstract}
-
-\begin{keyword}
-DeepCFD \sep PINN \sep Graph/Mesh-inspired learning \sep Attention U-Net \sep FNO \sep Transformer \sep CFD surrogate modeling
-\end{keyword}
 
 \end{frontmatter}
 
-\section{Introduction}
-High-fidelity Computational Fluid Dynamics (CFD) remains a cornerstone in energy engineering, but it is computationally expensive when repeated evaluations are required for design-space exploration, optimization, or control. DeepCFD proposed a supervised surrogate approach where convolutional neural networks map geometric/boundary-condition encodings to full flow fields \cite{ribeiro2020deepcfd}. 
+\section{Introduzione}
+La CFD ad alta fedelta' e' fondamentale in ambito energetico, ma il costo computazionale diventa elevato quando sono necessarie molte simulazioni per analisi di progetto, ottimizzazione o controllo. In questo lavoro si adotta un approccio surrogato basato su reti neurali, con l'obiettivo di mappare input geometrici e condizioni al contorno sui campi fluidodinamici completi.
 
-In this coursework, we reproduce the DeepCFD setting and investigate whether modern non-local inductive biases improve performance and physical consistency:
+Il coursework confronta una baseline U-Net con tre varianti che introducono bias induttivi non locali:
 \begin{itemize}
-    \item attention-gated skip connections \cite{oktay2018attentionunet},
-    \item Fourier global mixing via FNO bottleneck \cite{li2021fno},
-    \item self-attention via Transformer bottleneck \cite{vaswani2017attention}.
+    \item skip connection con attention gates,
+    \item mixing globale in dominio di Fourier (bottleneck FNO),
+    \item self-attention nel bottleneck (Transformer).
 \end{itemize}
 
-Each model is trained both data-only and with additional physics residual penalties (continuity, momentum, and boundary terms), yielding a controlled comparison on the effect of PINN-style regularization.
+Ogni modello e' stato addestrato sia in regime data-only sia in regime data+physics con penalizzazione PINN dei residui di continuita', quantita' di moto e bordo. Questo permette un confronto controllato dell'effetto della regolarizzazione fisica.
 
-\section{Related Work and Rationale}
-DeepCFD demonstrated that structured-grid surrogates can significantly accelerate flow prediction while retaining acceptable error levels \cite{ribeiro2020deepcfd}. MeshGraphNets extended message-passing simulation to unstructured domains, emphasizing relative geometric encoding and long-horizon stability \cite{pfaff2021meshgraphnets}. While our implementation remains grid-based, the same principle motivates the use of non-local operators (FNO and Transformer) to better capture long-range interactions.
-
-For physics-informed learning, practical evidence indicates that successful training often requires careful balancing, curriculum/ramping, and substantial optimization time \cite{chuang2022pinnpitfalls}. This is directly relevant to our findings: PINN terms can improve consistency, but they do not guarantee immediate metric gains under fixed epoch budgets.
-
-\section{Methodology}
-\subsection{Task and Data Representation}
-Input tensors encode geometry/boundary information on a fixed grid, and targets are three fields: velocity components $(U_x, U_y)$ and pressure $p$. Data are split 70/15/15 into train/validation/test. Evaluation metrics are computed on the fluid region only (obstacle masked out), consistent with physically meaningful error accounting.
-
-\subsection{Model Family}
-All models share a common U-Net-like encoder/decoder and differ in skip/bottleneck mechanisms:
+\section{Obiettivi del Report}
+Gli obiettivi principali sono quattro:
 \begin{itemize}
-    \item \textbf{UNet-Base}: plain convolutional bottleneck,
-    \item \textbf{UNet-Attention}: skip attention gates,
-    \item \textbf{UNet-FNO}: spectral FNO bottleneck,
-    \item \textbf{UNet-Transformer}: MHSA bottleneck with positional embedding.
+    \item confrontare quantitativamente le architetture sul test set masked,
+    \item identificare il modello migliore nel budget disponibile,
+    \item analizzare il contributo delle componenti della loss PINN,
+    \item validare i risultati con confronto visuale in inferenza e mappe di residuo.
 \end{itemize}
 
-Architectural diagrams are shown in Fig.~\ref{fig:arch}.
+\section{Metodologia}
+\subsection{Task e rappresentazione dei dati}
+Gli input codificano geometria e condizioni al contorno su griglia fissa; i target sono i tre canali fluidodinamici $(U_x, U_y, p)$. Lo split e' 70/15/15 tra train/validation/test. Le metriche sono calcolate solo nella regione fluida (ostacolo escluso tramite masking), per garantire un confronto fisicamente coerente.
+
+La scelta del masking e' cruciale: includere celle solide introdurrebbe errori non fisici e distorcerebbe il ranking tra modelli. Tutte le metriche aggregate riportate sono quindi riferite a celle fluide valide.
+
+\subsection{Famiglia di modelli}
+Tutti i modelli condividono backbone encoder-decoder di tipo U-Net e differiscono nel meccanismo di skip/bottleneck:
+\begin{itemize}
+    \item \textbf{UNet-Base}: bottleneck convoluzionale standard,
+    \item \textbf{UNet-Attention}: skip connection filtrate con attention gate,
+    \item \textbf{UNet-FNO}: bottleneck spettrale con operatori di Fourier,
+    \item \textbf{UNet-Transformer}: bottleneck con self-attention multi-head.
+\end{itemize}
+
+Le architetture sono mostrate in Fig.~\ref{fig:arch}; sotto sono discusse in termini operativi per evitare un confronto solo estetico.
+
+\paragraph{UNet-Base (riferimento convoluzionale).}
+La baseline usa convoluzioni locali a ogni livello. Il bias principale e' la localita': le interazioni vicine sono modellate bene, mentre gli effetti a lungo raggio emergono soprattutto tramite profondita' e pooling. In pratica e' stabile in training e veloce in inferenza, ma puo' faticare nelle regioni dove il coupling pressione-velocita' e' piu' globale.
+
+\paragraph{UNet-Attention (gated skips).}
+Le attention gates filtrano le feature provenienti dall'encoder prima della fusione nel decoder. Questo tende a sopprimere attivazioni poco utili e ad enfatizzare strutture rilevanti vicino all'ostacolo (shear layer, wake, gradienti a parete). Rispetto alla baseline mantiene la solidita' delle convoluzioni locali, ma rende la fusione multi-scala piu' selettiva; nei risultati e' infatti la variante piu' robusta con loss PINN.
+
+\paragraph{UNet-FNO (bottleneck spettrale).}
+In FNO il bottleneck effettua mixing globale in dominio di Fourier: le feature vengono proiettate nello spazio delle frequenze, trasformate su modi selezionati e riportate nello spazio fisico. Il vantaggio e' la capacita' di catturare dipendenze non locali; il limite e' una maggiore sensibilita' alla taratura (modi spettrali, pesi loss, schedule), in particolare quando loss dati e loss fisica competono.
+
+\paragraph{UNet-Transformer (self-attention nel bottleneck).}
+Il bottleneck Transformer usa self-attention multi-head con encoding posizionale, permettendo interazioni globali adattive al contenuto. Questa scelta aumenta l'espressivita' per strutture non locali, ma rende l'ottimizzazione piu' complessa e spesso richiede piu' dati o piu' epoche per convergere in modo stabile.
+
+\begin{table}[h]
+\centering
+\caption{Model complexity and practical role in this coursework.}
+\label{tab:arch_details}
+\begin{tabular}{lcl}
+\toprule
+Modello & Parametri & Bias induttivo principale \\
+\midrule
+UNet-Base & 518,051 & Coerenza convoluzionale locale \\
+UNet-Attention & 526,115 & Localita' + fusione skip selettiva \\
+UNet-FNO & 577,379 & Coupling globale spettrale \\
+UNet-Transformer & 884,931 & Attenzione globale adattiva \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Protocollo di training e valutazione}
+Per garantire equita' nel confronto, tutte le architetture sono addestrate con stesso split, stessi canali di output e stessa pipeline di metrica. Ogni modello e' valutato in due regimi:
+\begin{itemize}
+    \item \textbf{data-only}: loss supervisionata su $(U_x,U_y,p)$,
+    \item \textbf{data+physics}: loss supervisionata + termini PINN sui residui fisici.
+\end{itemize}
+
+Il budget di training e' volutamente comune tra modelli. Questo rende il confronto diretto, ma puo' penalizzare architetture con maggiore capacita' globale (FNO/Transformer), che potrebbero richiedere schedule piu' lunghe.
 
 \begin{figure*}[t]
     \centering
@@ -87,31 +128,59 @@ Architectural diagrams are shown in Fig.~\ref{fig:arch}.
         \includegraphics[width=\linewidth]{figures/unet_transformer_architecture.pdf}
         \caption{UNet-Transformer}
     \end{subfigure}
-    \caption{Architectures evaluated in this study. All models share the same macro-backbone and output head; only skip/bottleneck mechanisms change.}
+    \caption{Architetture valutate nel report. Encoder, decoder e testa di output sono condivisi; cambia il nucleo di routing informativo: skip gating (Attention), mixing globale in Fourier (FNO), self-attention nel bottleneck (Transformer).}
     \label{fig:arch}
 \end{figure*}
 
-\subsection{Loss Design}
-The data term follows the DeepCFD weighted formulation:
+\subsection{Definizione della loss}
+Il termine dati segue una formulazione pesata tra i tre canali:
 \begin{equation}
 \mathcal{L}_{data} = \frac{1}{3}\left(\frac{\mathrm{MSE}(U_x)}{w_{Ux}} + \frac{\mathrm{MSE}(U_y)}{w_{Uy}} + \frac{\mathrm{MAE}(p)}{w_p}\right),
 \end{equation}
-with channel-wise RMS normalization weights $w_c$.
+con pesi di normalizzazione RMS per canale $w_c$.
 
-The physics-informed term combines continuity, momentum, and boundary penalties via finite-difference residuals:
+Il contributo fisico e' basato sui residui a differenze finite delle Navier-Stokes incomprimibili stazionarie in 2D. Indicando le predizioni con $(u,v,p)$:
+\begin{equation}
+r_c = \partial_x u + \partial_y v,
+\end{equation}
+\begin{equation}
+r_x = u\,\partial_x u + v\,\partial_y u + \partial_x p - \nu\,\nabla^2 u,
+\end{equation}
+\begin{equation}
+r_y = u\,\partial_x v + v\,\partial_y v + \partial_y p - \nu\,\nabla^2 v.
+\end{equation}
+
+Da questi residui si ottengono le componenti PINN:
+\begin{equation}
+\mathcal{L}_{cont}=\langle r_c^2\rangle_{\Omega_f},\quad
+\mathcal{L}_{mom}=\langle r_x^2+r_y^2\rangle_{\Omega_f},
+\end{equation}
+\begin{equation}
+\mathcal{L}_{bc}=\langle\|\mathbf{u}-\mathbf{u}_{bc}\|_2^2\rangle_{\Gamma},
+\end{equation}
+dove $\Omega_f$ e' il dominio fluido e $\Gamma$ rappresenta i bordi con vincoli.
+
+Il termine fisico totale combina continuita', quantita' di moto e condizioni al bordo:
 \begin{equation}
 \mathcal{L}_{phys}=\lambda_c\mathcal{L}_{cont}+\lambda_m\mathcal{L}_{mom}+\lambda_b\mathcal{L}_{bc}.
 \end{equation}
 
-The final objective is
+L'obiettivo finale e':
 \begin{equation}
 \mathcal{L}=\mathcal{L}_{data}+\lambda_{eff}(e)\,\mathcal{L}_{phys},
 \end{equation}
-where $\lambda_{eff}$ includes epoch ramping and adaptive gradient-norm balancing.
+dove $\lambda_{eff}$ include ramping sulle epoche e bilanciamento adattivo delle norme di gradiente.
 
-\section{Experimental Results}
-\subsection{Quantitative Comparison}
-Table~\ref{tab:main} summarizes masked test metrics from the generated evaluation CSVs.
+Tre scelte implementative sono state particolarmente importanti per la stabilita' del training PINN:
+\begin{itemize}
+    \item i residui sono calcolati solo su celle fluide,
+    \item la pressione e' gauge-corrected (media nulla sul fluido) prima della valutazione dei residui,
+    \item il peso fisico viene attivato in modo progressivo per evitare dominanza precoce sulla parte dati.
+\end{itemize}
+
+\section{Risultati Sperimentali}
+\subsection{Confronto quantitativo principale}
+La Tabella~\ref{tab:main} riassume le metriche di test masked.
 
 \begin{table}[h]
 \centering
@@ -119,7 +188,7 @@ Table~\ref{tab:main} summarizes masked test metrics from the generated evaluatio
 \label{tab:main}
 \begin{tabular}{lcc}
 \toprule
-Model & MSE$_{total}$ & SSE$_{total}$ \\
+Modello & MSE$_{tot}$ & SSE$_{tot}$ \\
 \midrule
 UNet-Base (data) & 1.0012e-4 & 3.9596 \\
 UNet-Attention (data) & 1.0506e-4 & 4.1578 \\
@@ -132,76 +201,169 @@ UNet-Transformer (+phys) & 1.0863e-4 & 4.2937 \\
 \end{tabular}
 \end{table}
 
-From data-only to +physics:
+Passando da data-only a data+physics:
 \begin{itemize}
-    \item Attention improves by \textbf{+8.25\%} MSE,
-    \item FNO degrades by \textbf{-18.76\%},
-    \item Transformer degrades by \textbf{-6.24\%}.
+    \item Attention migliora di \textbf{+8.25\%} in MSE,
+    \item FNO peggiora di \textbf{-18.76\%},
+    \item Transformer peggiora di \textbf{-6.24\%}.
 \end{itemize}
 
-This divergence across architectures is central: physics terms are beneficial only when optimization dynamics and representational bias are aligned under the chosen training budget.
+Questo comportamento divergente e' centrale: i termini fisici sono utili solo quando dinamica di ottimizzazione e bias architetturale risultano allineati nel budget assegnato.
 
-\subsection{Convergence and Error Distributions}
-Figure~\ref{fig:curves} compares data-only vs +physics convergence. The attention model shows the clearest stable gain with PINN regularization, while FNO/Transformer display less favorable trajectories in the same epoch window.
+\subsection{Analisi per canale}
+Per capire da dove nasce il miglioramento, la Tabella~\ref{tab:channels} riporta la MSE masked per canale. Emerge un pattern chiaro:
+\begin{itemize}
+    \item l'errore di pressione ($p$) domina la scala della MSE totale,
+    \item $U_y$ e' mediamente il canale piu' semplice,
+    \item Attention+physics migliora soprattutto grazie a migliore bilanciamento su pressione e velocita' trasversa, con lieve trade-off su $U_x$ rispetto ad attention data-only.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Masked test MSE per channel (fluid-only).}
+\label{tab:channels}
+\begin{tabular}{lccc}
+\toprule
+Modello & MSE$_{Ux}$ & MSE$_{Uy}$ & MSE$_p$ \\
+\midrule
+UNet-Base (data) & 4.7009e-05 & 6.7207e-06 & 2.4663e-04 \\
+UNet-Attention (data) & 3.3783e-05 & 7.3448e-06 & 2.7406e-04 \\
+UNet-FNO (data) & 1.3338e-04 & 8.9318e-06 & 2.4611e-04 \\
+UNet-Transformer (data) & 4.6949e-05 & 7.6027e-06 & 2.5222e-04 \\
+UNet-Attention (+phys) & 3.8904e-05 & \textbf{4.2500e-06} & \textbf{2.4603e-04} \\
+UNet-FNO (+phys) & 2.0204e-04 & 1.1916e-05 & 2.4733e-04 \\
+UNet-Transformer (+phys) & 7.0695e-05 & 7.7878e-06 & 2.4742e-04 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Convergenza e distribuzione degli errori}
+La Figura~\ref{fig:curves} confronta la convergenza validation tra data-only e data+physics. Il modello attention mostra il guadagno piu' stabile con regolarizzazione PINN, mentre FNO e Transformer presentano traiettorie meno favorevoli nello stesso orizzonte di epoche.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{../figures/fig_data_vs_physics_curves.pdf}
-    \caption{Validation convergence for data-only vs data+physics per architecture.}
+    \includegraphics[width=\linewidth]{figures/fig_data_vs_physics_curves.pdf}
+    \caption{Convergenza in validation per modello: confronto tra data-only e data+physics.}
     \label{fig:curves}
 \end{figure}
 
-Relative-error histograms (Fig.~\ref{fig:relerr}) confirm that pressure remains the dominant contributor to total error spread, while $U_y$ is generally easier to fit than $U_x$ in this setup.
+Gli istogrammi di errore relativo (Fig.~\ref{fig:relerr}) confermano che la pressione rimane il contributo principale alla dispersione dell'errore totale, mentre $U_y$ risulta mediamente piu' semplice da approssimare rispetto a $U_x$.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{../figures/fig_relative_errors.pdf}
-    \caption{Relative error distributions across channels and models.}
+    \includegraphics[width=\linewidth]{figures/fig_relative_errors.pdf}
+    \caption{Distribuzioni dell'errore relativo per canale e per modello.}
     \label{fig:relerr}
 \end{figure}
 
-\subsection{Inference Cost}
-Across batch sizes, all surrogates are several orders of magnitude faster than the CFD reference baseline used in the DeepCFD convention. Depending on architecture and batching, speedups are in the range of approximately $7\times10^3$ to $1.3\times10^5$.
+\subsection{Costo di inferenza}
+Su tutti i batch size, i surrogati risultano di vari ordini di grandezza piu' rapidi rispetto alla baseline CFD di riferimento. Gli speedup osservati vanno approssimativamente da $7\times10^3$ a $1.3\times10^5$.
 
-\section{Discussion}
-\subsection{Why PINN Helps Some Models More Than Others}
-Our results suggest that the PINN extension is not universally plug-and-play:
+La Tabella~\ref{tab:inference} riporta latenze e speedup rappresentativi. Come atteso, batch piu' grandi migliorano fortemente il throughput per campione. Il miglior throughput e' ottenuto dalla baseline con batch 100 ($\sim 1.32\times10^5$), mentre attention e transformer restano su una fascia prestazionale comparabile.
+
+\begin{table}[h]
+\centering
+\caption{Inference timing summary from benchmark CSV.}
+\label{tab:inference}
+\begin{tabular}{lcc}
+\toprule
+Modello & Tempo campione (bs=1) [s] & Speedup (bs=100) \\
+\midrule
+UNet-Base (data) & 3.0546e-03 & 131,676 \\
+UNet-Attention (data) & 5.9986e-03 & 97,067 \\
+UNet-FNO (data) & 7.4316e-03 & 96,663 \\
+UNet-Transformer (data) & 6.8713e-03 & 106,111 \\
+UNet-Attention (+phys) & 5.9907e-03 & 96,906 \\
+UNet-FNO (+phys) & 7.4206e-03 & 96,478 \\
+UNet-Transformer (+phys) & 6.8762e-03 & 106,205 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Confronto visuale in inferenza}
+Per completare le metriche scalari, sono stati inclusi confronti qualitativi su campioni rappresentativi. La Figura~\ref{fig:flow_compare} confronta campi predetti in regime data-only e data+physics. La Figura~\ref{fig:error_maps} mostra mappe di errore su modulo della velocita' e pressione per i tre modelli physics-informed.
+
+Queste diagnostiche sono importanti perche' due modelli con MSE globale simile possono fallire in regioni diverse: uno puo' smussare la wake, un altro puo' preservarla ma introdurre rumore nei gradienti di pressione. Nei risultati ottenuti, Attention+physics fornisce il compromesso visuale migliore tra gradiente vicino all'ostacolo e regolarita' a valle.
+
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_0.pdf}
+        \caption{Campione 0}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_10.pdf}
+        \caption{Campione 10}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_flow_compare_data_phys_sample_25.pdf}
+        \caption{Campione 25}
+    \end{subfigure}
+    \caption{Confronto visuale in inferenza tra regimi data-only e data+physics su campioni rappresentativi.}
+    \label{fig:flow_compare}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_attn_phys_sample0.pdf}
+        \caption{UNet-Attention (+phys)}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_fno_phys_sample10.pdf}
+        \caption{UNet-FNO (+phys)}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.32\textwidth}
+        \includegraphics[width=\linewidth]{figures/fig_umag_p_error_trans_phys_sample25.pdf}
+        \caption{UNet-Transformer (+phys)}
+    \end{subfigure}
+    \caption{Mappe di errore su modulo della velocita' e pressione per le varianti physics-informed.}
+    \label{fig:error_maps}
+\end{figure*}
+
+\section{Discussione}
+\subsection{Perche' la PINN aiuta alcuni modelli e non altri}
+I risultati mostrano che l'estensione PINN non e' automaticamente vantaggiosa per tutte le architetture:
 \begin{itemize}
-    \item Attention-gated skips preserve locality while selectively emphasizing flow-relevant structures, giving a favorable optimization landscape for residual penalties.
-    \item FNO/Transformer bottlenecks introduce stronger global coupling. Under limited epochs, this can make balancing $\mathcal{L}_{data}$ and $\mathcal{L}_{phys}$ harder, causing under-optimized compromises.
+    \item gli skip con attention preservano localita' e selettivita', creando un landscape di ottimizzazione piu' favorevole ai termini di residuo,
+    \item i bottleneck FNO/Transformer introducono coupling globale piu' forte e, con poche epoche, possono rendere piu' difficile il bilanciamento tra $\mathcal{L}_{data}$ e $\mathcal{L}_{phys}$.
 \end{itemize}
 
-Therefore, it is plausible that PINN variants, especially on globally-mixing architectures, need \textbf{more epochs} (and potentially longer ramp-up and architecture-specific $\lambda_{phys}$ tuning) to realize their full benefit.
+In termini architetturali, il modello migliore nel benchmark (UNet-Attention + physics) si colloca in una zona intermedia tra localita' e globalita': arricchisce il routing delle feature senza rinunciare ai prior convoluzionali. Con il dataset e l'orizzonte di training correnti, questo risulta il compromesso migliore. Le varianti FNO e Transformer potrebbero richiedere schedule dedicate (warm-up piu' lungo, pesi residui differenti, batch potenzialmente maggiori).
 
-\subsection{Physical Consistency}
-Physical consistency was analyzed qualitatively and semi-quantitatively through residual maps (continuity and momentum) and boundary-aware masking:
+E' quindi plausibile che le varianti PINN, soprattutto con mixing globale, richiedano \textbf{piu' epoche} e tuning specifico dei coefficienti fisici per esprimere appieno il proprio potenziale.
+
+\subsection{Consistenza fisica}
+La consistenza fisica e' stata analizzata in modo qualitativo e semi-quantitativo tramite mappe di residuo (continuita' e quantita' di moto) e masking consapevole dei bordi:
 \begin{itemize}
-    \item enforcing obstacle masking and pressure gauge correction improves numerical behavior and interpretability,
-    \item residual maps show that low pointwise data error does not automatically imply best PDE consistency,
-    \item the +physics regime tends to produce smoother and more physically plausible fields when optimization converges adequately.
+    \item masking dell'ostacolo e gauge correction della pressione migliorano stabilita' numerica e interpretabilita',
+    \item mappe di residuo mostrano che basso errore puntuale non implica automaticamente migliore consistenza PDE,
+    \item il regime +physics tende a generare campi piu' regolari e plausibili quando l'ottimizzazione converge correttamente.
 \end{itemize}
 
-Representative residual maps are shown in Fig.~\ref{fig:residuals}.
+Mappe di residuo rappresentative sono riportate in Fig.~\ref{fig:residuals}.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{../figures/fig_residuals.pdf}
-    \caption{Continuity and momentum residual maps on a test sample.}
+    \includegraphics[width=\linewidth]{figures/fig_residuals.pdf}
+    \caption{Mappe di residuo di continuita' e quantita' di moto su un campione di test.}
     \label{fig:residuals}
 \end{figure}
 
-\section{Conclusions}
-This coursework confirms three key points:
+\section{Conclusioni}
+Il report evidenzia quattro punti principali:
 \begin{enumerate}
-    \item DeepCFD-style surrogates provide substantial inference acceleration for engineering workflows.
-    \item PINN losses can improve both accuracy and consistency, but gains are architecture-dependent.
-    \item In the current budget, \textbf{UNet-Attention + physics} is the best overall compromise between error and physical behavior.
+    \item i surrogati DeepCFD forniscono forte accelerazione in inferenza per workflow ingegneristici,
+    \item la loss PINN puo' migliorare accuratezza e consistenza, ma il beneficio dipende dall'architettura e dalla dinamica di ottimizzazione,
+    \item nel budget corrente, \textbf{UNet-Attention + physics} e' il miglior compromesso tra errore, robustezza e qualita' visuale dei campi,
+    \item analisi per canale e confronto visuale sono complementi necessari alla sola MSE aggregata.
 \end{enumerate}
 
-Future work should prioritize longer training schedules for PINN variants, architecture-specific physics-weight scheduling, and extension to mesh-native graph models for better geometric generalization.
-
-\bibliographystyle{elsarticle-num}
-\bibliography{biblio}
+Sviluppi futuri consigliati: (i) schedule PINN piu' lunghe e specifiche per modello, (ii) tuning sistematico di $\lambda_c,\lambda_m,\lambda_b$, (iii) diagnostiche di incertezza nelle regioni di flusso piu' difficili, (iv) estensione verso modelli graph/mesh-native per migliore generalizzazione geometrica.
 
 \end{document}
 
