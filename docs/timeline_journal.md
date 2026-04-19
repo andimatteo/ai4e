@@ -31,3 +31,4 @@ Commit 35: Compare model variants and export metrics by ivanbrillo
 Commit 36: Implement cross-validation logic in training scripts by lucabiundo
 Commit 37: Debug convergence issues in physics-informed model by lmagnolfi
 Commit 38: Finalize training pipelines for all models by andimatteo
+Commit 39: Format report according to template requirements by ivanbrillo
