@@ -62,3 +62,4 @@ Commit 37: Debug convergence issues in physics-informed model
 Commit 38: Finalize training pipelines for all models
 Commit 39: Format report according to template requirements
 Commit 40: Final project documentation and cleanup
+Commit 41: Calibrate residual weighting for stable PINN optimization
