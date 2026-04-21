@@ -64,3 +64,4 @@ Commit 39: Format report according to template requirements
 Commit 40: Final project documentation and cleanup
 Commit 41: Calibrate residual weighting for stable PINN optimization
 Commit 42: Add extended diagnostics for validation split behavior
+Commit 43: Improve checkpoint naming and metadata consistency
