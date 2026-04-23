@@ -68,3 +68,4 @@ Commit 43: Improve checkpoint naming and metadata consistency
 Commit 44: Update report plots with ablation comparison overlays
 Commit 45: Refine data pipeline notes in project timeline
 Commit 46: Add summary of transformer bottleneck observations
+Commit 47: Document final hyperparameter sweep outcomes
