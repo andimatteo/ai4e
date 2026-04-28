@@ -43,11 +43,56 @@ Sono stati valutati due regimi:
     \item \textbf{data+physics}: fitting dei campi con penalizzazione dei residui fisici.
 \end{itemize}
 
-\section{Impostazione sperimentale}
-\subsection{Dati e metriche}
-Gli input rappresentano geometria e condizioni al contorno su griglia fissa; i target sono $(U_x, U_y, p)$. Il dataset e' suddiviso in train/validation/test con rapporto 70/15/15.
+\section{Dataset}
+\subsection{Origine e dominio fisico}
+Il dataset utilizzato \`e il toy dataset pubblicato dagli autori di DeepCFD~\cite{ribeiro2020deepcfd}, disponibile su Zenodo al seguente indirizzo:
+\begin{center}
+\url{https://zenodo.org/record/3666056/files/DeepCFD.zip?download=1}
+\end{center}
+Esso comprende 981 campioni di flusso laminare stazionario in canali bidimensionali con ostacoli di geometria variabile. Le simulazioni sono state eseguite con il solutore \texttt{simpleFOAM} di OpenFOAM, risolvendo le equazioni di Navier-Stokes per fluido incomprimibile in regime stazionario. Il dominio fluido ha dimensioni fisiche $L_x = \SI{0.260}{\meter}$ e $L_y = \SI{0.120}{\meter}$, discretizzate su una griglia cartesiana uniforme di dimensioni $N_x \times N_y = 172 \times 79$.
 
-Le metriche sono calcolate solo nel dominio fluido (masking dell'ostacolo), cosi' da evitare errori non fisicamente significativi nella regione solida.
+Le geometrie degli ostacoli si ripartiscono in cinque famiglie: cerchi, quadrati, rombi, triangoli forward e triangoli backward, posizionati in modo casuale all'interno del canale con dimensioni e orientamenti variabili (Figura~\ref{fig:dataset_samples}). Il numero di Reynolds basato sull'altezza del canale e sulla velocit\`a di ingresso \`e tale da garantire regime laminare.
+
+\subsection{Campi di input}\label{subsec:input}
+Ogni campione di input, memorizzato nel tensore \texttt{dataX}, \`e costituito da tre canali scalari definiti sulla griglia spaziale:
+\begin{enumerate}
+    \item \textbf{SDF ostacolo:} signed distance function rispetto alla superficie dell'ostacolo. Valori negativi indicano punti interni all'ostacolo, valori positivi il dominio fluido circostante. Questo canale codifica in modo differenziabile la geometria dell'ostacolo, evitando le discontinuit\`a tipiche delle maschere binarie.
+    \item \textbf{Maschera della regione fluida:} campo che distingue la zona fluida dalla zona solida. Nel codice di addestramento questo canale \`e utilizzato per mascherare la loss, per applicare i vincoli al bordo (no-slip su ostacoli e pareti) e per forzare a zero le predizioni nella regione solida tramite il \emph{Hard Constraint Head}.
+    \item \textbf{SDF pareti del canale:} signed distance function rispetto alle pareti superiore e inferiore del canale. Questo canale fornisce informazione geometrica sulla prossimit\`a alle pareti, dove si applica la condizione di adesione.
+\end{enumerate}
+
+I tre canali sono concatenati in un tensore di ingresso di forma $(3, 172, 79)$. La scelta di usare SDF anzich\`e maschere binarie pure consente al modello di apprezzare la distanza geometrica in modo continuo, migliorando la generalizzazione su forme diverse.
+
+\subsection{Campi di output}\label{subsec:output}
+I target, memorizzati nel tensore \texttt{dataY}, sono i campi fluidodinamici ground-truth corrispondenti agli input:
+\begin{enumerate}
+    \item \textbf{Velocit\`a assiale $U_x$:} componente orizzontale del campo di velocit\`a, con condizione di inlet pari a $U_{inlet} = \SI{0.1}{\meter\per\second}$.
+    \item \textbf{Velocit\`a trasversale $U_y$:} componente verticale del campo di velocit\`a. Lontano dagli ostacoli risulta prossima a zero, ma assume valori significativi nelle zone di scia e ai lati degli ostacoli.
+    \item \textbf{Pressione $p$:} campo di pressione idrodinamica. Poich\`e la pressione \`e definita a meno di una costante, nei modelli si applica una \emph{gauge correction} che impone media nulla nel dominio fluido.
+\end{enumerate}
+
+L'output ha quindi forma $(3, 172, 79)$, dove i canali sono nell'ordine $(U_x, U_y, p)$. Le unit\`a di misura sono coerenti con il sistema SI, essendo le simulazioni CFD risultati diretti del solutore OpenFOAM.
+
+\subsection{Pre-processing e suddivisione}
+Il dataset \`e stato suddiviso in training, validation e test set con rapporto 70/15/15, corrispondenti rispettivamente a 686, 147 e 147 campioni. La permutazione casuale \`e fissata con seed 42 per garantire riproducibilit\`a.
+
+Durante l'addestramento, la loss \`e calcolata esclusivamente nelle celle del dominio fluido, mascherando la regione occupata dall'ostacolo. Inoltre, i pesi dei canali nella loss dati sono calibrati in base alla radice della media quadratica dei rispettivi campi target, cos\`i da bilanciare i differenti ordini di grandezza tra velocit\`a e pressione.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/deepcfd_dataset_samples.pdf}
+    \caption{Esempi di geometrie delle cinque famiglie di ostacoli presenti nel dataset DeepCFD.}
+    \label{fig:dataset_samples}
+\end{figure}
+
+Il codice di riferimento e le istruzioni per il download sono disponibili nella repository GitHub del progetto originale:
+\begin{center}
+\url{https://github.com/mdribeiro/DeepCFD}
+\end{center}
+
+\section{Impostazione sperimentale}
+\subsection{Metriche di valutazione}
+Le metriche sono calcolate solo nel dominio fluido (masking dell'ostacolo), cos\`i da evitare errori non fisicamente significativi nella regione solida. I target considerati sono $(U_x, U_y, p)$, come descritto in Sezione~\ref{subsec:output}.
 
 \subsection{Architetture considerate}
 In tutti i casi la struttura generale e' encoder-decoder di tipo U-Net. Cambia il meccanismo interno di fusione e propagazione dell'informazione.
